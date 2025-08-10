@@ -1,0 +1,68 @@
+name: Deploy to DigitalOcean App Platform
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: |
+        npm ci
+        
+    - name: Build application
+      run: |
+        npm run build
+        
+    - name: Install doctl
+      uses: digitalocean/action-doctl@v2
+      with:
+        token: ${{ secrets.DO_API_TOKEN }}
+        
+    - name: Deploy to DigitalOcean App Platform
+      run: |
+        doctl apps create-deployment ${{ secrets.DO_APP_ID }}
+        
+  # Alternative deployment using DigitalOcean deploy action
+  # Uncomment below if you prefer using the official DigitalOcean deploy action
+  # 
+  # deploy-with-action:
+  #   runs-on: ubuntu-latest
+  #   if: github.ref == 'refs/heads/main'
+  #   
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
+  #     
+  #   - name: Setup Node.js
+  #     uses: actions/setup-node@v4
+  #     with:
+  #       node-version: '18'
+  #       cache: 'npm'
+  #       
+  #   - name: Install dependencies
+  #     run: npm ci
+  #     
+  #   - name: Build application
+  #     run: npm run build
+  #     
+  #   - name: Deploy to DigitalOcean App Platform
+  #     uses: digitalocean/app_action@v1.1.5
+  #     with:
+  #       app_name: portfolio
+  #       token: ${{ secrets.DO_API_TOKEN }}
+  #       app_spec_location: .do/app.yaml
